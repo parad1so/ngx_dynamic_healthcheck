@@ -124,7 +124,10 @@ ngx_dynamic_healthcheck_api_base::do_disable_host
                              peer->server.len, host->len) == 0
                 || ngx_memn2cmp(peer->name.data, host->data,
                                 peer->name.len, host->len) == 0) {
-                peer->down = disable;
+                if (peer->down != (ngx_uint_t) disable) {
+                    peer->down = disable;
+                    peers->tries += disable ? -1 : 1;
+                }
             }
         }
 
@@ -140,7 +143,7 @@ ngx_dynamic_healthcheck_api_base::do_disable_host
 {
     ngx_stream_upstream_rr_peers_t  *primary, *peers;
     ngx_stream_upstream_rr_peer_t   *peer;
-    ngx_uint_t                     i;
+    ngx_uint_t                       i;
 
     primary = (ngx_stream_upstream_rr_peers_t *) uscf->peer.data;
     peers = primary;
@@ -153,7 +156,10 @@ ngx_dynamic_healthcheck_api_base::do_disable_host
                              peer->server.len, host->len) == 0
                 || ngx_memn2cmp(peer->name.data, host->data,
                                 peer->name.len, host->len) == 0) {
-                peer->down = disable;
+                if (peer->down != (ngx_uint_t) disable) {
+                    peer->down = disable;
+                    peers->tries += disable ? -1 : 1;
+                }
             }
         }
 

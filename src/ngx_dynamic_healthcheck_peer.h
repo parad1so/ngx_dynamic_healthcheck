@@ -118,7 +118,7 @@ template <class PeersT, class PeerT> class ngx_dynamic_healthcheck_peer_wrap :
     PeersT  *primary;
 
     PeerT *
-    find_peer()
+    find_peer(PeersT **p)
     {
         PeersT      *peers = primary;
         PeerT       *peer;
@@ -132,7 +132,10 @@ template <class PeersT, class PeerT> class ngx_dynamic_healthcheck_peer_wrap :
                                  server.len, peer->server.len) == 0
                     && ngx_memn2cmp(name.data, peer->name.data,
                                     name.len, peer->name.len) == 0)
+                {
+                    *p = peers;
                     return peer;
+                }
         }
 
         return NULL;
@@ -145,13 +148,15 @@ protected:
     {
         ngx_rwlock_rlock(&primary->rwlock);
 
-        PeerT  *peer = find_peer();
+        PeersT *peers = NULL;
+        PeerT  *peer = find_peer(&peers);
 
         if (peer != NULL) {
 
             ngx_rwlock_wlock(&peer->lock);
 
             if (peer->down) {
+                peers->tries++;
                 peer->down = 0;
                 ngx_log_error(NGX_LOG_NOTICE, event->log, 0,
                               "[%V] %V: %V addr=%V up",
@@ -169,13 +174,15 @@ protected:
     {
         ngx_rwlock_rlock(&primary->rwlock);
 
-        PeerT  *peer = find_peer();
+        PeersT *peers = NULL;
+        PeerT  *peer = find_peer(&peers);
 
         if (peer != NULL) {
 
             ngx_rwlock_wlock(&peer->lock);
 
             if (!peer->down) {
+                peers->tries--;
                 peer->down = 1;
                 if (!skip) {
                     ngx_log_error(NGX_LOG_WARN, event->log, 0,
