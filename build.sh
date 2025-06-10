@@ -55,7 +55,7 @@ function build_debug() {
   fi
 
   echo "Build debug nginx-$VERSION$SUFFIX"
-  make -j4 > /dev/null
+  make -j1 > /dev/null  # Исправлено здесь
 
   r=$?
   if [ $r -ne 0 ]; then
@@ -83,7 +83,7 @@ function build_release() {
   fi
 
   echo "Build release nginx-$VERSION$SUFFIX"
-  make -j4 > /dev/null
+  make -j1 > /dev/null
 
   r=$?
   if [ $r -ne 0 ]; then
@@ -146,6 +146,22 @@ function download_dep() {
   fi
 }
 
+function download_zlib() {
+  if [ $download -eq 1 ] || [ ! -e zlib-$ZLIB_VERSION.tar.gz ]; then
+    echo "Download zlib-$ZLIB_VERSION"
+    # Исправленная ссылка на zlib - используем GitHub вместо недоступного zlib.net
+    curl -s -L -o zlib-$ZLIB_VERSION.tar.gz https://github.com/madler/zlib/archive/v$ZLIB_VERSION.tar.gz
+  else
+    echo "Get zlib-$ZLIB_VERSION.tar.gz"
+  fi
+}
+
+function download() {
+  # ...
+  download_zlib
+  # ...
+}
+
 function extract_downloads() {
   cd download
 
@@ -172,7 +188,7 @@ function download() {
 
   download_module ZigzagAK    ngx_dynamic_upstream             master
 
-  download_dep http://zlib.net                                 zlib      $ZLIB_VERSION      tar.gz
+  download_zlib
 
   cd ..
 }
